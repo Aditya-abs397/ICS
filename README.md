@@ -55,10 +55,10 @@ Import `OpenPLC/program.st` into the OpenPLC dashboard, compile, and start.
 
 ```bash
 # Terminal 1 — start detector first
-python3 Detector/detection_system.py
+python Detector/detection_system.py
 
 # Terminal 2 — run attack after baseline is captured
-python3 Attacker/attack_system.py
+python Attacker/attack_system.py
 ```
 
 ## Screenshots
