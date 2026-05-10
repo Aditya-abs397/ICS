@@ -64,7 +64,7 @@ python3 Attacker/attack_system.py
 ## Screenshots
 
 **Detector catching live attack**
-![detector](reze/assets/detector.png)
+![detector](reze/assets/detection.png)
 
 **Attack script output**
 ![attack](reze/assets/attack.png)
