@@ -5,24 +5,28 @@ from datetime import datetime
 TARGET = '127.0.0.1'
 PORT = 502
 POLL_INTERVAL = 0.05
-TANK_JUMP_THRESHOLD = 50  # change above 50 = attack
+TANK_JUMP_THRESHOLD = 50
 
 client = ModbusTcpClient(TARGET, port=PORT)
 client.connect()
 
 print("=" * 40)
-print("    ICS DETECTOR   ")
+print("    ICS DETECTOR - KAVACH")
 print("=" * 40)
 print("\n[*] Monitoring OpenPLC registers...")
 print("    Press Ctrl+C to stop\n")
 
-# Baseline
+print("    [!] Capturing baseline in 2s... ensure system is clean")
+time.sleep(2)
+
 baseline_regs = client.read_holding_registers(address=0, count=8).registers
 baseline_coils = client.read_coils(address=0, count=8).bits[:8]
-print(f"    Baseline Registers: {baseline_regs}")
-print(f"    Baseline Coils: {list(baseline_coils)}\n")
+print(f"    Baseline Registers: {list(baseline_regs)}")
+print(f"    Baseline Coils:     {list(baseline_coils)}\n")
 
 prev_regs = list(baseline_regs)
+active_coil_alerts = set()
+active_reg_alerts = set()
 
 try:
     while True:
@@ -31,23 +35,27 @@ try:
         regs = client.read_holding_registers(address=0, count=8).registers
         coils = client.read_coils(address=0, count=8).bits[:8]
 
-        # Check for HVAC coil manipulation first (Priority)
-        hvac_attack_detected = False
+        # Coil detection
         for i, (current, base) in enumerate(zip(coils, baseline_coils)):
             if current != base:
-                print(f"[{timestamp}] [ATTACK] Coil {i} manipulated: {base} → {current}")
-                hvac_attack_detected = True
+                if i not in active_coil_alerts:
+                    print(f"\n[{timestamp}] [ATTACK] Coil {i} manipulated: {base} → {current}")
+                    active_coil_alerts.add(i)
 
-        # Tank jump detection (Only if change is above 50)
-        # Reports if there is no HVAC threat OR if both are happening
+        # Register jump detection
         for i, (current, prev) in enumerate(zip(regs, prev_regs)):
             jump = abs(current - prev)
             if jump > TANK_JUMP_THRESHOLD:
-                print(f"[{timestamp}] [ATTACK] Register {i} jumped by {jump}: {prev} → {current}")
+                if i not in active_reg_alerts:
+                    print(f"\n[{timestamp}] [ATTACK] Register {i} jumped by {jump}: {prev} → {current}")
+                    active_reg_alerts.add(i)
 
         prev_regs = list(regs)
 
-        print(f"[{timestamp}] [OK] Regs={list(regs[:4])} Coils={list(coils[:4])}", end='\r')
+        if active_coil_alerts or active_reg_alerts:
+            print(f"[{timestamp}] \033[91m[ATTACK] ⚠ INTRUSION ACTIVE | Coils: {list(active_coil_alerts)} | State: {list(coils[:8])}\033[0m", end='\r')
+        else:
+            print(f"[{timestamp}] [OK] Regs={list(regs[:4])} Coils={list(coils[:4])}          ", end='\r')
 
         time.sleep(POLL_INTERVAL)
 
