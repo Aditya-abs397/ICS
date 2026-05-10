@@ -29,17 +29,6 @@ OpenPLC runs a simple HVAC and tank control loop (`OpenPLC/program.st`):
 
 Scan cycle: 100ms
 
-## Project Structure
-
-reze/
-├── Attacker/
-│   └── attack_system.py       # Modbus manipulation tool
-├── Detector/
-│   └── detection_system.py    # Attack detection system
-└── OpenPLC/
-    └── program.st             # Structured Text PLC program
-
-
 ## Components
 
 **`Attacker/attack_system.py`**  
